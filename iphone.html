@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-  <title>Aprendizaje de Caracteres Chinos - Versión iPhone</title>
+  <title>Aprendizaje de Caracteres Chinos - iPhone (Menú Derecha)</title>
 
   <!-- Librerías para CSV/Excel y gráficos -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
@@ -16,45 +16,40 @@
 
   <style>
     /* ===================== Estilos Generales ===================== */
-    /*
-      -webkit-text-size-adjust: none evita que Safari en iPhone
-      cambie el tamaño de fuente automáticamente.
-    */
     body {
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
       background: #f9f9f9;
       color: #333;
-      -webkit-text-size-adjust: none;
+      -webkit-text-size-adjust: none; /* Evita zoom automático en iPhone */
       transition: background 0.3s, color 0.3s;
       overflow-x: hidden; /* Evita scroll horizontal al abrir menú */
     }
 
-    /* Contenedor general de la aplicación */
     .app-container {
-      display: flex; /* Importante para que el side-nav conviva con el contenido */
+      display: flex;
       position: relative;
       min-height: 100vh;
       width: 100%;
     }
 
-    /* ===================== Menú Lateral (Side Navigation) ===================== */
+    /* ===================== Menú Lateral (Derecha) ===================== */
     .side-nav {
-      position: fixed;      /* Fijo al lado izquierdo */
+      position: fixed;
       top: 0;
-      left: -240px;         /* Comienza oculto a la izquierda */
-      width: 240px;         /* Ancho del menú */
+      right: -240px;   /* Oculto a la derecha inicialmente */
+      width: 240px;
       height: 100%;
       background: #fff;
-      border-right: 1px solid #ccc;
+      border-left: 1px solid #ccc; /* Borde a la izquierda del menú */
       padding: 20px 10px;
-      box-shadow: 2px 0 8px rgba(0,0,0,0.2);
-      transition: left 0.3s ease;
-      z-index: 9999;        /* Por encima del contenido */
+      box-shadow: -2px 0 8px rgba(0,0,0,0.2);
+      transition: right 0.3s ease;
+      z-index: 9999;
     }
     .side-nav.open {
-      left: 0; /* Desliza el menú hacia adentro */
+      right: 0; /* Al abrir, se muestra en la posición 0 */
     }
     .side-nav h2 {
       font-size: 18px;
@@ -74,11 +69,11 @@
       border-radius: 5px;
     }
 
-    /* Botón hamburguesa para abrir/cerrar menú */
+    /* Botón hamburguesa (arriba a la derecha) */
     .menu-toggle {
       position: fixed;
       top: 10px;
-      left: 10px;
+      right: 10px;   /* Ubicado a la derecha */
       width: 40px;
       height: 40px;
       background: #333;
@@ -86,20 +81,21 @@
       font-size: 26px;
       border: none;
       border-radius: 4px;
-      z-index: 10000; /* Para que quede encima del nav */
+      z-index: 10000; 
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
     }
 
-    /* ===================== Secciones ===================== */
+    /* ===================== Contenido Principal ===================== */
     main {
-      flex: 1; /* Ocupa el espacio restante */
-      margin-top: 0;
+      flex: 1;
       padding: 10px;
-      transition: margin-left 0.3s ease;
+      transition: margin-right 0.3s ease; 
+      /* Dejamos margen por si queremos "empujar" el contenido al abrir menú */
     }
+
     section {
       display: none;
       padding: 15px;
@@ -149,14 +145,28 @@
     }
 
     /* ===================== Botones ===================== */
-    .responseButtons button, .navButtons button {
+    .responseButtons {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      margin: 10px 0;
+    }
+    .responseButtons button {
+      font-size: 20px;
+      padding: 12px 25px;
+      margin: 5px;
+      cursor: pointer;
+    }
+
+    .navButtons {
+      margin-top: 15px;
+    }
+    .navButtons button {
       margin: 5px 5px 5px 0;
       padding: 10px 14px;
       font-size: 16px;
       cursor: pointer;
-    }
-    .navButtons {
-      margin-top: 15px;
     }
 
     /* ===================== Tablas ===================== */
@@ -228,22 +238,21 @@
     }
     .dark-theme .side-nav {
       background: #2a2a2a;
-      border-right-color: #555;
+      border-left-color: #555;
     }
     .dark-theme .side-nav button {
       background: #333;
       color: #ddd;
     }
-
   </style>
 </head>
 <body>
-  <!-- Botón Hamburguesa para abrir/cerrar el menú lateral -->
+  <!-- Botón Hamburguesa (arriba a la derecha) -->
   <button class="menu-toggle" id="menuToggle">&#9776;</button>
 
-  <!-- Contenedor principal: side-nav + main -->
+  <!-- Contenedor principal -->
   <div class="app-container">
-    <!-- Menú lateral -->
+    <!-- Menú lateral (Derecha) -->
     <nav class="side-nav" id="sideNav">
       <h2>Menú</h2>
       <button id="btnPracticar">Practicar</button>
@@ -254,7 +263,7 @@
       <button id="btnAjustes">Ajustes</button>
     </nav>
 
-    <!-- Secciones de contenido -->
+    <!-- Contenido principal -->
     <main id="mainContent">
       <!-- Sección: Modo Practicar -->
       <section id="sectionPracticar" class="active">
@@ -277,19 +286,25 @@
         <div id="progressBarContainer">
           <div id="progressBar"></div>
         </div>
+        
         <div id="flashcard" class="flashcard">?</div>
         <div id="details" class="details hidden"></div>
+        
+        <!-- Botones: primero Mal (izq.), luego Bien (der.) -->
         <div class="responseButtons">
-          <button id="btnMostrar">Mostrar</button>
-          <button id="btnBien" class="hidden">Bien</button>
-          <button id="btnMal" class="hidden">Mal</button>
+          <button id="btnMal" class="hidden" style="background: #f77; border: 2px solid #c00;">Mal</button>
+          <button id="btnBien" class="hidden" style="background: #7f7; border: 2px solid #0c0;">Bien</button>
+          <button id="btnMostrar" style="background: #eee; border: 2px solid #ccc;">Mostrar</button>
         </div>
         <p>O usa las teclas configuradas para responder.</p>
+        
         <div class="navButtons">
           <button id="btnPrev">&larr; Anterior</button>
           <button id="btnTogglePause">Pausar</button>
         </div>
+        
         <button id="resetSession">Resetear Sesión</button>
+        
         <div id="sessionSummary" class="hidden">
           <h2>Resumen de Sesión</h2>
           <p id="score"></p>
@@ -403,8 +418,9 @@
         <div id="flashcardRepaso" class="flashcard">?</div>
         <div id="detailsRepaso" class="details hidden"></div>
         <div class="responseButtons" id="responseButtonsRepaso">
-          <button id="btnBienRepaso">Bien</button>
-          <button id="btnMalRepaso">Mal</button>
+          <!-- Mal a la izquierda, Bien a la derecha -->
+          <button id="btnMalRepaso" style="background: #f77; border: 2px solid #c00;">Mal</button>
+          <button id="btnBienRepaso" style="background: #7f7; border: 2px solid #0c0;">Bien</button>
         </div>
         <div class="navButtons" id="navButtonsRepaso">
           <button id="btnPrevRepaso">&larr; Anterior</button>
@@ -417,7 +433,6 @@
       <section id="sectionNuevas">
         <h1>Aprender Nuevas Palabras</h1>
         <p>Aquí se muestran las últimas <span id="newWordsCountDisplay">10</span> palabras añadidas.</p>
-        <!-- Opciones de sombreado rápido -->
         <div>
           <label for="highlightColor">Color para sombrear:</label>
           <input type="color" id="highlightColor" value="#000000">
@@ -445,8 +460,8 @@
         <div id="repasarNuevasFlashcard" class="flashcard">?</div>
         <div id="repasarNuevasDetails" class="details hidden"></div>
         <div class="responseButtons">
-          <button id="btnMostrarRepasarNuevas">Mostrar</button>
-          <button id="btnSiguienteRepasarNuevas">Siguiente</button>
+          <button id="btnMostrarRepasarNuevas" style="background: #eee; border: 2px solid #ccc;">Mostrar</button>
+          <button id="btnSiguienteRepasarNuevas" style="background: #ddd;">Siguiente</button>
         </div>
         <button id="btnVolverNuevas">Volver a Aprender Nuevas Palabras</button>
       </section>
@@ -486,25 +501,25 @@
     </main>
   </div>
 
-  <!-- Script principal -->
+  <!-- Script Principal -->
   <script>
     document.addEventListener("DOMContentLoaded", function() {
-      /* ==================== ABRIR/CERRAR MENÚ LATERAL ==================== */
+      /* =============== ABRIR/CERRAR MENÚ (DERECHA) =============== */
       const menuToggleBtn = document.getElementById("menuToggle");
       const sideNav = document.getElementById("sideNav");
       const mainContent = document.getElementById("mainContent");
 
       menuToggleBtn.addEventListener("click", () => {
         sideNav.classList.toggle("open");
-        // Opcional: desplazar levemente el contenido
         if (sideNav.classList.contains("open")) {
-          mainContent.style.marginLeft = "240px";
+          // Opcional: empujar el contenido a la izquierda
+          mainContent.style.marginRight = "240px";
         } else {
-          mainContent.style.marginLeft = "0";
+          mainContent.style.marginRight = "0";
         }
       });
 
-      /* ==================== VARIABLES GLOBALES ORIGINALES ==================== */
+      /* ==================== VARIABLES GLOBALES ==================== */
       let words = [];
       let settings = {
         keyMostrar: "m",
@@ -530,7 +545,7 @@
       
       let selectedColor = "#000000";
 
-      /* ==================== FUNCIONES DE PERSISTENCIA ==================== */
+      /* ==================== PERSISTENCIA ==================== */
       function saveWords() {
         localStorage.setItem("words", JSON.stringify(words));
       }
@@ -573,6 +588,7 @@
 
       loadSettings();
       loadWords();
+
       // Carga inicial mínima si no hay palabras
       if(!words || words.length === 0) {
         words = [
@@ -598,7 +614,7 @@
         return array;
       }
 
-      /* ==================== HISTORIAL DE SESIONES ==================== */
+      /* ==================== HISTORIAL ==================== */
       function saveSessionHistory() {
         const sessionData = {
           date: new Date().toISOString(),
@@ -692,15 +708,9 @@
       
       function showSection(section) {
         sideNav.classList.remove("open");
-        mainContent.style.marginLeft = "0"; // Cierra menú al navegar
-        [
-          sectionPracticar,
-          sectionGestionar,
-          sectionEstadisticas,
-          sectionRepaso,
-          sectionNuevas,
-          sectionRepasarNuevas,
-          sectionAjustes
+        mainContent.style.marginRight = "0"; // Cierra menú si estaba abierto
+        [ sectionPracticar, sectionGestionar, sectionEstadisticas, 
+          sectionRepaso, sectionNuevas, sectionRepasarNuevas, sectionAjustes
         ].forEach(sec => sec.classList.remove("active"));
         
         if(section === "practicar") sectionPracticar.classList.add("active");
@@ -837,7 +847,6 @@
       btnBien.addEventListener("click", () => responder(true));
       btnMal.addEventListener("click", () => responder(false));
       
-      // Atajos teclado (iPhone con teclado físico/Bluetooth o Safari Desktop)
       document.addEventListener("keydown", function(event) {
         if(!sectionPracticar.classList.contains("active") || paused) return;
         if(!responses[currentIndex] && !btnMostrar.classList.contains("hidden")) {
@@ -975,7 +984,7 @@
         }
       });
 
-      /* ==================== SECCIÓN NUEVAS PALABRAS ==================== */
+      /* ==================== NUEVAS PALABRAS ==================== */
       const highlightColorInput = document.getElementById("highlightColor");
       let newWords = [];
       
@@ -1089,7 +1098,7 @@
         showSection("nuevas");
       });
 
-      /* ==================== GESTIÓN DE PALABRAS (CRUD) ==================== */
+      /* ==================== GESTIÓN (CRUD) ==================== */
       const wordForm = document.getElementById("wordForm");
       wordForm.addEventListener("submit", function(event) {
         event.preventDefault();
@@ -1128,7 +1137,8 @@
           tbody.appendChild(row);
         });
       }
-      // Para llamadas directas
+      
+      // Para que puedan llamarse desde el HTML inline:
       window.editWord = function(index) {
         const word = words[index];
         document.getElementById("caracter").value = word.caracter;
@@ -1172,7 +1182,7 @@
               const importedWords = JSON.parse(e.target.result);
               if(Array.isArray(importedWords)) {
                 importedWords.forEach(w => {
-                  if(w.caracter){
+                  if(w.caracter) {
                     w.failCount = w.failCount || 0;
                     words.push(w);
                   }
@@ -1342,6 +1352,10 @@
           alert("Estadísticas reiniciadas.");
         }
       });
+
+      /* ==================== RENDER INICIAL ==================== */
+      // Si deseas que inicie en otra sección, cámbialo aquí.
+      showSection("practicar");
     });
   </script>
 </body>
