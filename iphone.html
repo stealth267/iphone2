@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <!-- Optimizaciones para iPhone -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <title>Aprendizaje de Caracteres Chinos - iPhone (Menú Derecha)</title>
+
+  <!-- Librerías para CSV/Excel y gráficos -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    /* ===================== Estilos Generales ===================== */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f9f9f9;
+      color: #333;
+      -webkit-text-size-adjust: none; /* Evita zoom automático en iPhone */
+      transition: background 0.3s, color 0.3s;
+      overflow-x: hidden; /* Evita scroll horizontal al abrir menú */
+    }
+
+    .app-container {
+      display: flex;
+      position: relative;
+      min-height: 100vh;
+      width: 100%;
+    }
+
+    /* ===================== Menú Lateral (Derecha) ===================== */
+    .side-nav {
+      position: fixed;
+      top: 0;
+      right: -240px;   /* Oculto a la derecha inicialmente */
+      width: 240px;
+      height: 100%;
+      background: #fff;
+      border-left: 1px solid #ccc; /* Borde a la izquierda del menú */
+      padding: 20px 10px;
+      box-shadow: -2px 0 8px rgba(0,0,0,0.2);
+      transition: right 0.3s ease;
+      z-index: 9999;
+    }
+    .side-nav.open {
+      right: 0; /* Al abrir, se muestra en la posición 0 */
+    }
+    .side-nav h2 {
+      font-size: 18px;
+      margin: 0 0 1em;
+      text-align: center;
+    }
+    .side-nav button {
+      display: block;
+      width: 100%;
+      text-align: left;
+      margin: 0.2em 0;
+      padding: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      background: #fafafa;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+
+    /* Botón hamburguesa (arriba a la derecha) */
+    .menu-toggle {
+      position: fixed;
+      top: 10px;
+      right: 10px;   /* Ubicado a la derecha */
+      width: 40px;
+      height: 40px;
+      background: #333;
+      color: #fff;
+      font-size: 26px;
+      border: none;
+      border-radius: 4px;
+      z-index: 10000; 
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    /* ===================== Contenido Principal ===================== */
+    main {
+      flex: 1;
+      padding: 10px;
+      transition: margin-right 0.3s ease; 
+      /* Dejamos margen por si queremos "empujar" el contenido al abrir menú */
+    }
+
+    section {
+      display: none;
+      padding: 15px;
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      max-width: 100%;
+      margin: 0 auto 20px;
+    }
+    section.active {
+      display: block;
+    }
+    .hidden {
+      display: none !important;
+    }
+
+    /* ===================== Flashcard y Detalles ===================== */
+    .flashcard {
+      font-size: 8vw;
+      margin-bottom: 10px;
+      cursor: pointer;
+      border: 4px solid transparent;
+      padding: 20px;
+      border-radius: 10px;
+      transition: border-color 0.3s;
+      text-align: center;
+    }
+    .details p {
+      font-size: 5vw;
+      margin: 5px 0;
+    }
+
+    /* ===================== Barra de Progreso ===================== */
+    #progressBarContainer {
+      width: 100%;
+      background: #ddd;
+      border-radius: 5px;
+      margin-bottom: 15px;
+      height: 20px;
+    }
+    #progressBar {
+      width: 0%;
+      height: 100%;
+      background: #4caf50;
+      border-radius: 5px;
+      transition: width 0.3s;
+    }
+
+    /* ===================== Botones ===================== */
+    .responseButtons {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+      margin: 10px 0;
+    }
+    .responseButtons button {
+      font-size: 20px;
+      padding: 12px 25px;
+      margin: 5px;
+      cursor: pointer;
+    }
+
+    .navButtons {
+      margin-top: 15px;
+    }
+    .navButtons button {
+      margin: 5px 5px 5px 0;
+      padding: 10px 14px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    /* ===================== Tablas ===================== */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      font-size: 4vw;
+    }
+    table, th, td {
+      border: 1px solid #ccc;
+    }
+    th, td {
+      padding: 8px;
+      text-align: center;
+      vertical-align: middle;
+      cursor: pointer;
+    }
+    th {
+      background: #eee;
+    }
+
+    /* ===================== Formularios ===================== */
+    form input, form textarea, form select {
+      margin: 5px 0;
+      padding: 8px;
+      font-size: 16px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    form button {
+      padding: 8px 12px;
+      font-size: 16px;
+      cursor: pointer;
+      width: 100%;
+      margin: 5px 0;
+    }
+
+    /* ===================== Tabs ===================== */
+    .tabs {
+      text-align: center;
+      margin-bottom: 15px;
+    }
+    .tabs button {
+      margin: 0 5px;
+      padding: 8px 12px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    .tabContent {
+      display: none;
+    }
+    .tabContent.active {
+      display: block;
+    }
+
+    /* ===================== Tema Oscuro ===================== */
+    .dark-theme {
+      background: #1e1e1e;
+      color: #ddd;
+    }
+    .dark-theme section {
+      background: #2a2a2a;
+      border-color: #555;
+    }
+    .dark-theme th {
+      background: #333;
+      color: #ddd;
+    }
+    .dark-theme .side-nav {
+      background: #2a2a2a;
+      border-left-color: #555;
+    }
+    .dark-theme .side-nav button {
+      background: #333;
+      color: #ddd;
+    }
+  </style>
+</head>
+<body>
+  <!-- Botón Hamburguesa (arriba a la derecha) -->
+  <button class="menu-toggle" id="menuToggle">&#9776;</button>
+
+  <!-- Contenedor principal -->
+  <div class="app-container">
+    <!-- Menú lateral (Derecha) -->
+    <nav class="side-nav" id="sideNav">
+      <h2>Menú</h2>
+      <button id="btnPracticar">Practicar</button>
+      <button id="btnGestionar">Gestionar Palabras</button>
+      <button id="btnEstadisticas">Estadísticas</button>
+      <button id="btnRepaso">Repaso Problemas</button>
+      <button id="btnNuevas">Nuevas Palabras</button>
+      <button id="btnAjustes">Ajustes</button>
+    </nav>
+
+    <!-- Contenido principal -->
+    <main id="mainContent">
+      <!-- Sección: Modo Practicar -->
+      <section id="sectionPracticar" class="active">
+        <h1>Modo Practicar</h1>
+        <div id="practiceOptions">
+          <label for="practiceMode">Modo: </label>
+          <select id="practiceMode">
+            <option value="normal">Añadidas</option>
+            <option value="aleatorio">Aleatorio</option>
+            <option value="repaso">Repaso (más falladas)</option>
+          </select>
+          <br><br>
+          <label for="practiceView">Visualización: </label>
+          <select id="practiceView">
+            <option value="normal" selected>Normal (carácter primero)</option>
+            <option value="invertido">Invertido (significado primero)</option>
+          </select>
+          <button id="startPractice">Iniciar Práctica</button>
+        </div>
+        <div id="progressBarContainer">
+          <div id="progressBar"></div>
+        </div>
+        
+        <div id="flashcard" class="flashcard">?</div>
+        <div id="details" class="details hidden"></div>
+        
+        <!-- Botones: primero Mal (izq.), luego Bien (der.) -->
+        <div class="responseButtons">
+          <button id="btnMal" class="hidden" style="background: #f77; border: 2px solid #c00;">Mal</button>
+          <button id="btnBien" class="hidden" style="background: #7f7; border: 2px solid #0c0;">Bien</button>
+          <button id="btnMostrar" style="background: #eee; border: 2px solid #ccc;">Mostrar</button>
+        </div>
+        <p>O usa las teclas configuradas para responder.</p>
+        
+        <div class="navButtons">
+          <button id="btnPrev">&larr; Anterior</button>
+          <button id="btnTogglePause">Pausar</button>
+        </div>
+        
+        <button id="resetSession">Resetear Sesión</button>
+        
+        <div id="sessionSummary" class="hidden">
+          <h2>Resumen de Sesión</h2>
+          <p id="score"></p>
+          <p id="streakDisplay"></p>
+          <h3>Tarjetas Falladas:</h3>
+          <table id="errorTable">
+            <thead>
+              <tr>
+                <th>Caracter</th>
+                <th>Pinyin</th>
+                <th>Significado</th>
+                <th>Ejemplo</th>
+                <th>Tono</th>
+                <th>Fallos</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Sección: Gestión de Palabras -->
+      <section id="sectionGestionar">
+        <h1>Gestión de Palabras</h1>
+        <form id="wordForm">
+          <input type="text" id="caracter" placeholder="Caracter" required>
+          <input type="text" id="pinyin" placeholder="Pinyin" required>
+          <input type="text" id="significado" placeholder="Significado" required>
+          <input type="text" id="ejemplo" placeholder="Ejemplo" required>
+          <input type="text" id="tono" placeholder="Tono" required>
+          <textarea id="nota" placeholder="Notas o trucos (opcional)"></textarea>
+          <button type="submit">Agregar Palabra</button>
+        </form>
+        <table id="wordsTable">
+          <thead>
+            <tr>
+              <th>Caracter</th>
+              <th>Pinyin</th>
+              <th>Significado</th>
+              <th>Ejemplo</th>
+              <th>Tono</th>
+              <th>Notas</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <br>
+        <button id="exportData">Exportar Datos (JSON)</button>
+        <input type="file" id="importData" accept=".json, .csv, .xls, .xlsx">
+      </section>
+
+      <!-- Sección: Estadísticas -->
+      <section id="sectionEstadisticas">
+        <h1>Estadísticas de Aprendizaje</h1>
+        <div class="tabs" id="statsTabs">
+          <button id="tabGlobal">Globales</button>
+          <button id="tabSession">Sesión Actual</button>
+          <button id="tabHistory">Historial</button>
+        </div>
+        <div id="globalStatsContainer" class="tabContent active">
+          <p id="globalStats"></p>
+          <h3>Palabras Más Falladas (Global):</h3>
+          <table id="failTable">
+            <thead>
+              <tr>
+                <th>Caracter</th>
+                <th>Fallos</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div id="sessionStatsContainer" class="tabContent">
+          <p id="sessionStats"></p>
+          <h3>Detalle de la Sesión Actual:</h3>
+          <table id="sessionDetailTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Caracter</th>
+                <th>Respuesta</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div id="historyContainer" class="tabContent">
+          <h3>Historial de Sesiones</h3>
+          <canvas id="historyChart" width="400" height="200"></canvas>
+          <table id="historyTable">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Total</th>
+                <th>Aciertos</th>
+                <th>Errores</th>
+                <th>%</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+          <button id="exportHistory">Exportar Historial (CSV)</button>
+        </div>
+      </section>
+
+      <!-- Sección: Repaso de Problemas -->
+      <section id="sectionRepaso">
+        <h1>Repaso de Tarjetas Problemáticas</h1>
+        <p>Se repasan aquellas tarjetas cuyo contador de fallos supera el umbral configurado.</p>
+        <div id="flashcardRepaso" class="flashcard">?</div>
+        <div id="detailsRepaso" class="details hidden"></div>
+        <div class="responseButtons" id="responseButtonsRepaso">
+          <!-- Mal a la izquierda, Bien a la derecha -->
+          <button id="btnMalRepaso" style="background: #f77; border: 2px solid #c00;">Mal</button>
+          <button id="btnBienRepaso" style="background: #7f7; border: 2px solid #0c0;">Bien</button>
+        </div>
+        <div class="navButtons" id="navButtonsRepaso">
+          <button id="btnPrevRepaso">&larr; Anterior</button>
+          <button id="btnTogglePauseRepaso">Pausar</button>
+        </div>
+        <button id="resetRepaso">Resetear Repaso</button>
+      </section>
+
+      <!-- Sección: Aprender Nuevas Palabras -->
+      <section id="sectionNuevas">
+        <h1>Aprender Nuevas Palabras</h1>
+        <p>Aquí se muestran las últimas <span id="newWordsCountDisplay">10</span> palabras añadidas.</p>
+        <div>
+          <label for="highlightColor">Color para sombrear:</label>
+          <input type="color" id="highlightColor" value="#000000">
+          <button id="btnClearHighlight">Quitar sombreado</button>
+          <button id="btnRandomizeNewWords">Aleatorio</button>
+        </div>
+        <table id="newWordsTable">
+          <thead>
+            <tr>
+              <th>Caracter</th>
+              <th>Pinyin</th>
+              <th>Significado</th>
+              <th>Ejemplo</th>
+              <th>Tono</th>
+              <th>Nota</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <!-- Sección: Repasar Nuevas Palabras -->
+      <section id="sectionRepasarNuevas">
+        <h1>Repasar Nuevas Palabras</h1>
+        <div id="repasarNuevasFlashcard" class="flashcard">?</div>
+        <div id="repasarNuevasDetails" class="details hidden"></div>
+        <div class="responseButtons">
+          <button id="btnMostrarRepasarNuevas" style="background: #eee; border: 2px solid #ccc;">Mostrar</button>
+          <button id="btnSiguienteRepasarNuevas" style="background: #ddd;">Siguiente</button>
+        </div>
+        <button id="btnVolverNuevas">Volver a Aprender Nuevas Palabras</button>
+      </section>
+
+      <!-- Sección: Ajustes -->
+      <section id="sectionAjustes">
+        <h1>Ajustes</h1>
+        <form id="settingsForm">
+          <label>Tecla para "Mostrar":</label>
+          <input type="text" id="keyMostrar" value="m" maxlength="1" required><br>
+          <label>Tecla para "Bien":</label>
+          <input type="text" id="keyCorrect" value="k" maxlength="1" required><br>
+          <label>Tecla para "Mal":</label>
+          <input type="text" id="keyIncorrect" value="l" maxlength="1" required><br>
+          <label>Umbral de fallo para repaso:</label>
+          <input type="number" id="problemThreshold" value="2" required><br>
+          <label>Delay de Feedback (ms):</label>
+          <input type="number" id="feedbackDelay" value="500" required><br>
+          <label>Audio Activado:</label>
+          <select id="audioEnabled">
+            <option value="true" selected>Si</option>
+            <option value="false">No</option>
+          </select><br>
+          <label>Tema Oscuro:</label>
+          <input type="checkbox" id="darkTheme"><br>
+          <label>Notificaciones Activadas:</label>
+          <input type="checkbox" id="notificationsEnabled" checked><br>
+          <label>Cantidad de palabras nuevas:</label>
+          <input type="number" id="newWordsCount" value="10" min="1" required><br>
+          <button type="submit">Guardar Ajustes</button>
+          <button type="button" id="resetAll">Resetear Todo</button>
+        </form>
+        <br>
+        <button type="button" id="resetStats">Resetear Estadísticas</button>
+        <p>Los ajustes se aplicarán inmediatamente a las sesiones nuevas.</p>
+      </section>
+    </main>
+  </div>
+
+  <!-- Script Principal -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      /* =============== ABRIR/CERRAR MENÚ (DERECHA) =============== */
+      const menuToggleBtn = document.getElementById("menuToggle");
+      const sideNav = document.getElementById("sideNav");
+      const mainContent = document.getElementById("mainContent");
+
+      menuToggleBtn.addEventListener("click", () => {
+        sideNav.classList.toggle("open");
+        if (sideNav.classList.contains("open")) {
+          // Opcional: empujar el contenido a la izquierda
+          mainContent.style.marginRight = "240px";
+        } else {
+          mainContent.style.marginRight = "0";
+        }
+      });
+
+      /* ==================== VARIABLES GLOBALES ==================== */
+      let words = [];
+      let settings = {
+        keyMostrar: "m",
+        keyCorrect: "k",
+        keyIncorrect: "l",
+        problemThreshold: 2,
+        audioEnabled: true,
+        feedbackDelay: 500,
+        darkTheme: false,
+        notificationsEnabled: true,
+        newWordsCount: 10
+      };
+      let practiceViewMode = "normal";
+      
+      let currentIndex = 0, correctCount = 0, sessionPracticed = 0, responses = [], paused = false;
+      let practiceSessionWords = [];
+      let currentStreak = 0, achievementThreshold = 5;
+      let repasoWords = [];
+      let repasoIndex = 0, repasoPaused = false;
+      
+      let repasarNuevasWords = [];
+      let repasarNuevasIndex = 0;
+      
+      let selectedColor = "#000000";
+
+      /* ==================== PERSISTENCIA ==================== */
+      function saveWords() {
+        localStorage.setItem("words", JSON.stringify(words));
+      }
+      function loadWords() {
+        const stored = localStorage.getItem("words");
+        if(stored) {
+          words = JSON.parse(stored);
+        }
+      }
+      function saveSettings() {
+        localStorage.setItem("settings", JSON.stringify(settings));
+      }
+      function loadSettings() {
+        const stored = localStorage.getItem("settings");
+        if(stored) {
+          settings = JSON.parse(stored);
+          document.getElementById("keyMostrar").value = settings.keyMostrar;
+          document.getElementById("keyCorrect").value = settings.keyCorrect;
+          document.getElementById("keyIncorrect").value = settings.keyIncorrect;
+          document.getElementById("problemThreshold").value = settings.problemThreshold;
+          document.getElementById("feedbackDelay").value = settings.feedbackDelay;
+          document.getElementById("audioEnabled").value = settings.audioEnabled ? "true" : "false";
+          document.getElementById("darkTheme").checked = settings.darkTheme;
+          document.getElementById("notificationsEnabled").checked = settings.notificationsEnabled;
+          document.getElementById("newWordsCount").value = settings.newWordsCount;
+          document.getElementById("newWordsCountDisplay").textContent = settings.newWordsCount;
+          applyTheme();
+        }
+      }
+      function applyTheme() {
+        if(document.getElementById("darkTheme").checked) {
+          document.body.classList.add("dark-theme");
+          settings.darkTheme = true;
+        } else {
+          document.body.classList.remove("dark-theme");
+          settings.darkTheme = false;
+        }
+        saveSettings();
+      }
+
+      loadSettings();
+      loadWords();
+
+      // Carga inicial mínima si no hay palabras
+      if(!words || words.length === 0) {
+        words = [
+          { caracter: "你", pinyin: "nǐ", significado: "tú", ejemplo: "你好", tono: "3", nota:"", failCount: 0 },
+          { caracter: "好", pinyin: "hǎo", significado: "bien", ejemplo: "muy bien", tono: "3", nota:"", failCount: 0 }
+        ];
+        saveWords();
+      }
+
+      /* ==================== UTILIDADES ==================== */
+      function renderCardDetails(card) {
+        return `<p><strong>Pinyin:</strong> ${card.pinyin}</p>
+                <p><strong>Significado:</strong> ${card.significado}</p>
+                <p><strong>Ejemplo:</strong> ${card.ejemplo}</p>
+                <p><strong>Tono:</strong> ${card.tono}</p>
+                <p><strong>Nota:</strong> ${card.nota || "-"}</p>`;
+      }
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      /* ==================== HISTORIAL ==================== */
+      function saveSessionHistory() {
+        const sessionData = {
+          date: new Date().toISOString(),
+          total: sessionPracticed,
+          correct: correctCount,
+          incorrect: sessionPracticed - correctCount,
+          percentage: sessionPracticed ? ((correctCount / sessionPracticed) * 100).toFixed(2) : "0"
+        };
+        let history = JSON.parse(localStorage.getItem("sessionHistory")) || [];
+        history.push(sessionData);
+        localStorage.setItem("sessionHistory", JSON.stringify(history));
+      }
+      function loadSessionHistory() {
+        return JSON.parse(localStorage.getItem("sessionHistory")) || [];
+      }
+      function renderSessionHistory() {
+        const history = loadSessionHistory();
+        const ctx = document.getElementById("historyChart").getContext("2d");
+        if(window.historyChart) {
+          window.historyChart.destroy();
+        }
+        const labels = history.map(s => new Date(s.date).toLocaleDateString());
+        const data = history.map(s => parseFloat(s.percentage));
+        window.historyChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [{
+              label: 'Porcentaje de Aciertos',
+              data,
+              backgroundColor: 'rgba(0,200,0,0.2)',
+              borderColor: 'rgba(0,200,0,1)',
+              borderWidth: 2,
+              fill: true
+            }]
+          },
+          options: {
+            scales: {
+              y: { beginAtZero: true, max: 100 }
+            }
+          }
+        });
+        const tbody = document.querySelector("#historyTable tbody");
+        tbody.innerHTML = "";
+        history.forEach(session => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${new Date(session.date).toLocaleString()}</td>
+            <td>${session.total}</td>
+            <td>${session.correct}</td>
+            <td>${session.incorrect}</td>
+            <td>${session.percentage}%</td>`;
+          tbody.appendChild(row);
+        });
+      }
+
+      /* ==================== NAVEGACIÓN DE SECCIONES ==================== */
+      const sectionPracticar = document.getElementById("sectionPracticar");
+      const sectionGestionar = document.getElementById("sectionGestionar");
+      const sectionEstadisticas = document.getElementById("sectionEstadisticas");
+      const sectionRepaso = document.getElementById("sectionRepaso");
+      const sectionNuevas = document.getElementById("sectionNuevas");
+      const sectionRepasarNuevas = document.getElementById("sectionRepasarNuevas");
+      const sectionAjustes = document.getElementById("sectionAjustes");
+
+      document.getElementById("btnPracticar").addEventListener("click", () => {
+        showSection("practicar");
+      });
+      document.getElementById("btnGestionar").addEventListener("click", () => {
+        showSection("gestionar");
+        renderWordsTable();
+      });
+      document.getElementById("btnEstadisticas").addEventListener("click", () => {
+        showSection("estadisticas");
+        renderGlobalStats();
+        renderFailTable();
+        renderSessionStats();
+        renderSessionHistory();
+      });
+      document.getElementById("btnRepaso").addEventListener("click", () => {
+        iniciarRepaso();
+        showSection("repaso");
+      });
+      document.getElementById("btnNuevas").addEventListener("click", () => {
+        renderNewWordsTable();
+        showSection("nuevas");
+      });
+      document.getElementById("btnAjustes").addEventListener("click", () => {
+        showSection("ajustes");
+      });
+      
+      function showSection(section) {
+        sideNav.classList.remove("open");
+        mainContent.style.marginRight = "0"; // Cierra menú si estaba abierto
+        [ sectionPracticar, sectionGestionar, sectionEstadisticas, 
+          sectionRepaso, sectionNuevas, sectionRepasarNuevas, sectionAjustes
+        ].forEach(sec => sec.classList.remove("active"));
+        
+        if(section === "practicar") sectionPracticar.classList.add("active");
+        else if(section === "gestionar") sectionGestionar.classList.add("active");
+        else if(section === "estadisticas") sectionEstadisticas.classList.add("active");
+        else if(section === "repaso") sectionRepaso.classList.add("active");
+        else if(section === "nuevas") sectionNuevas.classList.add("active");
+        else if(section === "repasarNuevas") sectionRepasarNuevas.classList.add("active");
+        else if(section === "ajustes") sectionAjustes.classList.add("active");
+      }
+
+      /* ==================== MODO PRACTICAR ==================== */
+      const flashcardDiv = document.getElementById("flashcard");
+      const detailsDiv = document.getElementById("details");
+      const scoreParagraph = document.getElementById("score");
+      const sessionSummaryDiv = document.getElementById("sessionSummary");
+      const errorTableBody = document.querySelector("#errorTable tbody");
+      const btnMostrar = document.getElementById("btnMostrar");
+      const btnBien = document.getElementById("btnBien");
+      const btnMal = document.getElementById("btnMal");
+      const btnPrev = document.getElementById("btnPrev");
+      const btnTogglePause = document.getElementById("btnTogglePause");
+      const btnStartPractice = document.getElementById("startPractice");
+      const progressBar = document.getElementById("progressBar");
+      
+      const practiceViewSelect = document.getElementById("practiceView");
+      
+      function startPracticeSession() {
+        const mode = document.getElementById("practiceMode").value;
+        practiceViewMode = practiceViewSelect.value;
+        if(mode === "normal") {
+          practiceSessionWords = [...words];
+        } else if(mode === "aleatorio") {
+          practiceSessionWords = shuffleArray([...words]);
+        } else if(mode === "repaso") {
+          practiceSessionWords = words.filter(w => w.failCount > 0);
+          if(practiceSessionWords.length === 0) {
+            alert("No hay palabras con fallos. Se usará el modo normal.");
+            practiceSessionWords = [...words];
+          }
+        }
+        currentIndex = 0;
+        correctCount = 0;
+        sessionPracticed = 0;
+        responses = [];
+        currentStreak = 0;
+        updateProgress();
+        showCard();
+      }
+      btnStartPractice.addEventListener("click", startPracticeSession);
+      
+      function updateProgress() {
+        if(practiceSessionWords.length > 0) {
+          const percentage = (currentIndex / practiceSessionWords.length) * 100;
+          progressBar.style.width = percentage + "%";
+        } else {
+          progressBar.style.width = "0%";
+        }
+      }
+      
+      function showCard() {
+        updateProgress();
+        if(currentIndex >= practiceSessionWords.length) {
+          showSessionSummary();
+          return;
+        }
+        btnBien.style.border = "";
+        btnMal.style.border = "";
+        const card = practiceSessionWords[currentIndex];
+        flashcardDiv.style.borderColor = "transparent";
+        
+        // Modo de visualización
+        if(practiceViewMode === "normal") {
+          flashcardDiv.textContent = card.caracter;
+        } else {
+          flashcardDiv.textContent = card.significado;
+        }
+        
+        if(responses[currentIndex]) {
+          detailsDiv.innerHTML = renderCardDetails(card);
+          detailsDiv.classList.remove("hidden");
+          btnMostrar.classList.add("hidden");
+          btnBien.classList.add("hidden");
+          btnMal.classList.add("hidden");
+        } else {
+          detailsDiv.classList.add("hidden");
+          btnMostrar.classList.remove("hidden");
+          btnBien.classList.add("hidden");
+          btnMal.classList.add("hidden");
+        }
+      }
+      
+      btnMostrar.addEventListener("click", () => {
+        const card = practiceSessionWords[currentIndex];
+        detailsDiv.innerHTML = renderCardDetails(card);
+        detailsDiv.classList.remove("hidden");
+        btnMostrar.classList.add("hidden");
+        btnBien.classList.remove("hidden");
+        btnMal.classList.remove("hidden");
+      });
+      
+      function responder(correcto) {
+        if(responses[currentIndex]) return;
+        const card = practiceSessionWords[currentIndex];
+        detailsDiv.innerHTML = renderCardDetails(card);
+        detailsDiv.classList.remove("hidden");
+        sessionPracticed++;
+        if(correcto) {
+          correctCount++;
+          responses[currentIndex] = "Correcto";
+          flashcardDiv.style.borderColor = "green";
+          btnBien.style.border = "2px solid green";
+          currentStreak++;
+          if(currentStreak >= achievementThreshold && settings.notificationsEnabled) {
+            alert(`¡Racha de ${currentStreak} aciertos!`);
+          }
+          if(card.failCount > 0) {
+            card.failCount--;
+          }
+        } else {
+          card.failCount++;
+          responses[currentIndex] = "Incorrecto";
+          flashcardDiv.style.borderColor = "red";
+          btnMal.style.border = "2px solid red";
+          currentStreak = 0;
+        }
+        saveWords();
+        setTimeout(() => {
+          currentIndex++;
+          showCard();
+        }, settings.feedbackDelay);
+      }
+      
+      btnBien.addEventListener("click", () => responder(true));
+      btnMal.addEventListener("click", () => responder(false));
+      
+      document.addEventListener("keydown", function(event) {
+        if(!sectionPracticar.classList.contains("active") || paused) return;
+        if(!responses[currentIndex] && !btnMostrar.classList.contains("hidden")) {
+          if(event.key === settings.keyMostrar) {
+            btnMostrar.click();
+            return;
+          }
+        }
+        if(!responses[currentIndex] && !btnBien.classList.contains("hidden")) {
+          if(event.key === settings.keyCorrect) responder(true);
+          if(event.key === settings.keyIncorrect) responder(false);
+        }
+      });
+      
+      btnPrev.addEventListener("click", () => {
+        if(currentIndex > 0) {
+          currentIndex--;
+          showCard();
+        }
+      });
+      btnTogglePause.addEventListener("click", () => {
+        paused = !paused;
+        btnTogglePause.textContent = paused ? "Reanudar" : "Pausar";
+      });
+      
+      document.getElementById("resetSession").addEventListener("click", () => {
+        currentIndex = 0;
+        correctCount = 0;
+        sessionPracticed = 0;
+        responses = [];
+        currentStreak = 0;
+        flashcardDiv.classList.remove("hidden");
+        sessionSummaryDiv.classList.add("hidden");
+        showCard();
+      });
+      
+      function showSessionSummary() {
+        flashcardDiv.classList.add("hidden");
+        detailsDiv.classList.add("hidden");
+        sessionSummaryDiv.classList.remove("hidden");
+        scoreParagraph.textContent = `Aciertos: ${correctCount} de ${sessionPracticed} | Racha: ${currentStreak}`;
+        errorTableBody.innerHTML = "";
+        words.forEach(card => {
+          if(card.failCount > 0) {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+              <td>${card.caracter}</td>
+              <td>${card.pinyin}</td>
+              <td>${card.significado}</td>
+              <td>${card.ejemplo}</td>
+              <td>${card.tono}</td>
+              <td>${card.failCount}</td>`;
+            errorTableBody.appendChild(row);
+          }
+        });
+        saveSessionHistory();
+        renderSessionHistory();
+      }
+      
+      flashcardDiv.addEventListener("click", () => {
+        if(currentIndex < practiceSessionWords.length && settings.audioEnabled) {
+          speak(practiceSessionWords[currentIndex].pinyin);
+        }
+      });
+
+      /* ==================== MODO REPASO ==================== */
+      const repasoCard = document.getElementById("flashcardRepaso");
+      const detailsRepaso = document.getElementById("detailsRepaso");
+      const btnBienRepaso = document.getElementById("btnBienRepaso");
+      const btnMalRepaso = document.getElementById("btnMalRepaso");
+      const btnPrevRepaso = document.getElementById("btnPrevRepaso");
+      const btnTogglePauseRepaso = document.getElementById("btnTogglePauseRepaso");
+      
+      function iniciarRepaso() {
+        repasoWords = words.filter(w => w.failCount >= settings.problemThreshold);
+        repasoIndex = 0;
+        repasoPaused = false;
+        showCardRepaso();
+      }
+      function showCardRepaso() {
+        if(repasoWords.length === 0) {
+          repasoCard.textContent = "No hay tarjetas problemáticas para repasar.";
+          detailsRepaso.classList.add("hidden");
+          return;
+        }
+        if(repasoIndex >= repasoWords.length) {
+          repasoIndex = 0;
+        }
+        const card = repasoWords[repasoIndex];
+        repasoCard.textContent = card.caracter;
+        repasoCard.style.borderColor = "transparent";
+        detailsRepaso.classList.add("hidden");
+      }
+      function responderRepaso(correcto) {
+        if(repasoWords.length === 0) return;
+        const card = repasoWords[repasoIndex];
+        detailsRepaso.innerHTML = renderCardDetails(card);
+        detailsRepaso.classList.remove("hidden");
+        if(correcto) {
+          repasoCard.style.borderColor = "green";
+          btnBienRepaso.style.border = "2px solid green";
+          if(card.failCount > 0) {
+            card.failCount--;
+          }
+        } else {
+          card.failCount++;
+          repasoCard.style.borderColor = "red";
+          btnMalRepaso.style.border = "2px solid red";
+        }
+        saveWords();
+        setTimeout(() => {
+          repasoIndex++;
+          showCardRepaso();
+        }, settings.feedbackDelay);
+      }
+      
+      btnBienRepaso.addEventListener("click", () => responderRepaso(true));
+      btnMalRepaso.addEventListener("click", () => responderRepaso(false));
+      btnPrevRepaso.addEventListener("click", () => {
+        if(repasoIndex > 0) {
+          repasoIndex--;
+          showCardRepaso();
+        }
+      });
+      btnTogglePauseRepaso.addEventListener("click", () => {
+        repasoPaused = !repasoPaused;
+        btnTogglePauseRepaso.textContent = repasoPaused ? "Reanudar" : "Pausar";
+      });
+      document.getElementById("resetRepaso").addEventListener("click", () => {
+        iniciarRepaso();
+      });
+      repasoCard.addEventListener("click", () => {
+        if(repasoIndex < repasoWords.length && settings.audioEnabled) {
+          speak(repasoWords[repasoIndex].pinyin);
+        }
+      });
+
+      /* ==================== NUEVAS PALABRAS ==================== */
+      const highlightColorInput = document.getElementById("highlightColor");
+      let newWords = [];
+      
+      function renderNewWordsTable() {
+        const count = parseInt(document.getElementById("newWordsCount").value);
+        const newWordsTableBody = document.querySelector("#newWordsTable tbody");
+        newWordsTableBody.innerHTML = "";
+        newWords = words.slice(-count).reverse();
+        newWords.forEach((word) => {
+          const row = document.createElement("tr");
+          const cellData = [
+            word.caracter,
+            word.pinyin,
+            word.significado,
+            word.ejemplo,
+            word.tono,
+            word.nota || "-"
+          ];
+          cellData.forEach((data, colIndex) => {
+            const cell = document.createElement("td");
+            cell.textContent = data;
+            // Sombreado rápido
+            cell.addEventListener("click", function() {
+              if(colIndex === 0) {
+                // Quita sombreado a toda la fila
+                Array.from(cell.parentElement.children).forEach(c => {
+                  c.style.backgroundColor = "";
+                  c.style.color = "";
+                });
+              } else {
+                // Sombrea la columna completa
+                const rows = document.querySelectorAll("#newWordsTable tbody tr");
+                let allShaded = true;
+                rows.forEach(row => {
+                  const c = row.children[colIndex];
+                  if(c.style.backgroundColor !== selectedColor) {
+                    allShaded = false;
+                  }
+                });
+                rows.forEach(row => {
+                  const c = row.children[colIndex];
+                  if(allShaded) {
+                    c.style.backgroundColor = "";
+                    c.style.color = "";
+                  } else {
+                    c.style.backgroundColor = selectedColor;
+                    c.style.color = "black";
+                  }
+                });
+              }
+            });
+            row.appendChild(cell);
+          });
+          newWordsTableBody.appendChild(row);
+        });
+      }
+      
+      document.getElementById("btnClearHighlight").addEventListener("click", () => {
+        document.querySelectorAll("#newWordsTable td").forEach(cell => {
+          cell.style.backgroundColor = "";
+          cell.style.color = "";
+        });
+      });
+      
+      document.getElementById("btnRandomizeNewWords").addEventListener("click", () => {
+        newWords = shuffleArray(newWords.slice());
+        renderNewWordsTable();
+      });
+      
+      highlightColorInput.addEventListener("input", (e) => {
+        selectedColor = e.target.value;
+      });
+
+      /* ==================== REPASAR NUEVAS PALABRAS ==================== */
+      const repasarNuevasFlashcard = document.getElementById("repasarNuevasFlashcard");
+      const repasarNuevasDetails = document.getElementById("repasarNuevasDetails");
+      const btnMostrarRepasarNuevas = document.getElementById("btnMostrarRepasarNuevas");
+      const btnSiguienteRepasarNuevas = document.getElementById("btnSiguienteRepasarNuevas");
+      const btnVolverNuevas = document.getElementById("btnVolverNuevas");
+      
+      function iniciarRepasarNuevas() {
+        const count = settings.newWordsCount;
+        repasarNuevasWords = words.slice(-count).reverse();
+        repasarNuevasIndex = 0;
+        showCardRepasarNuevas();
+      }
+      function showCardRepasarNuevas() {
+        if(repasarNuevasWords.length === 0) {
+          repasarNuevasFlashcard.textContent = "No hay palabras nuevas para repasar.";
+          repasarNuevasDetails.classList.add("hidden");
+          return;
+        }
+        if(repasarNuevasIndex >= repasarNuevasWords.length) {
+          repasarNuevasIndex = 0;
+        }
+        const card = repasarNuevasWords[repasarNuevasIndex];
+        repasarNuevasFlashcard.textContent = card.caracter;
+        repasarNuevasFlashcard.style.borderColor = "transparent";
+        repasarNuevasDetails.classList.add("hidden");
+      }
+      btnMostrarRepasarNuevas.addEventListener("click", () => {
+        const card = repasarNuevasWords[repasarNuevasIndex];
+        repasarNuevasDetails.innerHTML = renderCardDetails(card);
+        repasarNuevasDetails.classList.remove("hidden");
+      });
+      btnSiguienteRepasarNuevas.addEventListener("click", () => {
+        repasarNuevasIndex++;
+        showCardRepasarNuevas();
+      });
+      btnVolverNuevas.addEventListener("click", () => {
+        showSection("nuevas");
+      });
+
+      /* ==================== GESTIÓN (CRUD) ==================== */
+      const wordForm = document.getElementById("wordForm");
+      wordForm.addEventListener("submit", function(event) {
+        event.preventDefault();
+        const newWord = {
+          caracter: document.getElementById("caracter").value,
+          pinyin: document.getElementById("pinyin").value,
+          significado: document.getElementById("significado").value,
+          ejemplo: document.getElementById("ejemplo").value,
+          tono: document.getElementById("tono").value,
+          nota: document.getElementById("nota").value,
+          failCount: 0
+        };
+        words.push(newWord);
+        saveWords();
+        wordForm.reset();
+        renderWordsTable();
+      });
+      
+      function renderWordsTable() {
+        const tbody = document.querySelector("#wordsTable tbody");
+        tbody.innerHTML = "";
+        words.forEach((word, index) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${word.caracter}</td>
+            <td>${word.pinyin}</td>
+            <td>${word.significado}</td>
+            <td>${word.ejemplo}</td>
+            <td>${word.tono}</td>
+            <td>${word.nota || "-"}</td>
+            <td>
+              <button onclick="editWord(${index})">Editar</button>
+              <button onclick="deleteWord(${index})">Borrar</button>
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
+      }
+      
+      // Para que puedan llamarse desde el HTML inline:
+      window.editWord = function(index) {
+        const word = words[index];
+        document.getElementById("caracter").value = word.caracter;
+        document.getElementById("pinyin").value = word.pinyin;
+        document.getElementById("significado").value = word.significado;
+        document.getElementById("ejemplo").value = word.ejemplo;
+        document.getElementById("tono").value = word.tono;
+        document.getElementById("nota").value = word.nota;
+        words.splice(index, 1);
+        saveWords();
+        renderWordsTable();
+      };
+      
+      window.deleteWord = function(index) {
+        if(confirm("¿Seguro que deseas borrar esta palabra?")) {
+          words.splice(index, 1);
+          saveWords();
+          renderWordsTable();
+        }
+      };
+      
+      window.exportData = function() {
+        const dataStr = JSON.stringify(words);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "palabras.json";
+        a.click();
+        URL.revokeObjectURL(url);
+      };
+      document.getElementById("exportData").addEventListener("click", window.exportData);
+      
+      document.getElementById("importData").addEventListener("change", function(event) {
+        const file = event.target.files[0];
+        const fileName = file.name.toLowerCase();
+        if(fileName.endsWith(".json")) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            try {
+              const importedWords = JSON.parse(e.target.result);
+              if(Array.isArray(importedWords)) {
+                importedWords.forEach(w => {
+                  if(w.caracter) {
+                    w.failCount = w.failCount || 0;
+                    words.push(w);
+                  }
+                });
+                saveWords();
+                renderWordsTable();
+              } else {
+                alert("El archivo JSON no tiene el formato correcto.");
+              }
+            } catch (err) {
+              alert("Error al importar datos JSON.");
+            }
+          };
+          reader.readAsText(file);
+        } else if(fileName.endsWith(".csv")) {
+          Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+              if(results && results.data && results.data.length > 0) {
+                results.data.forEach(row => {
+                  const newWord = {
+                    caracter: row["Caracter"] || row["caracter"] || "",
+                    pinyin: row["Pinyin"] || "",
+                    significado: row["Significado"] || "",
+                    ejemplo: row["Ejemplo"] || "",
+                    tono: row["Tono"] || "",
+                    nota: row["Notas"] || row["nota"] || "",
+                    failCount: 0
+                  };
+                  if(newWord.caracter.trim() !== "") {
+                    words.push(newWord);
+                  }
+                });
+                saveWords();
+                renderWordsTable();
+              } else {
+                alert("El archivo CSV está vacío o tiene un formato incorrecto.");
+              }
+            },
+            error: function(err) {
+              alert("Error al leer el archivo CSV: " + err);
+            }
+          });
+        } else if(fileName.endsWith(".xls") || fileName.endsWith(".xlsx")) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            try {
+              const data = new Uint8Array(e.target.result);
+              const workbook = XLSX.read(data, { type: "array" });
+              const firstSheetName = workbook.SheetNames[0];
+              const worksheet = workbook.Sheets[firstSheetName];
+              const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+              jsonData.forEach(row => {
+                const newWord = {
+                  caracter: row["Caracter"] || row["caracter"] || "",
+                  pinyin: row["Pinyin"] || "",
+                  significado: row["Significado"] || "",
+                  ejemplo: row["Ejemplo"] || "",
+                  tono: row["Tono"] || "",
+                  nota: row["Notas"] || row["nota"] || "",
+                  failCount: 0
+                };
+                if(newWord.caracter.trim() !== "") {
+                  words.push(newWord);
+                }
+              });
+              saveWords();
+              renderWordsTable();
+            } catch (err) {
+              alert("Error al leer el archivo Excel.");
+            }
+          };
+          reader.readAsArrayBuffer(file);
+        } else {
+          alert("Formato de archivo no soportado. Usa JSON, CSV, XLS o XLSX.");
+        }
+      });
+
+      /* ==================== PRONUNCIACIÓN (AUDIO) ==================== */
+      function speak(text) {
+        if('speechSynthesis' in window && settings.audioEnabled) {
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.lang = 'zh-CN';
+          speechSynthesis.speak(utterance);
+        }
+      }
+
+      /* ==================== ESTADÍSTICAS ==================== */
+      function renderGlobalStats() {
+        const globalStats = document.getElementById("globalStats");
+        globalStats.textContent = `Total de palabras: ${words.length}`;
+      }
+      function renderFailTable() {
+        const tbody = document.querySelector("#failTable tbody");
+        tbody.innerHTML = "";
+        const failedWords = words.filter(w => w.failCount > 0).sort((a, b) => b.failCount - a.failCount);
+        failedWords.forEach(word => {
+          const row = document.createElement("tr");
+          row.innerHTML = `<td>${word.caracter}</td><td>${word.failCount}</td>`;
+          tbody.appendChild(row);
+        });
+      }
+      function renderSessionStats() {
+        const sessionStats = document.getElementById("sessionStats");
+        sessionStats.textContent = `Practicadas: ${sessionPracticed} | Aciertos: ${correctCount} | Errores: ${sessionPracticed - correctCount} | Racha: ${currentStreak}`;
+        const tbody = document.querySelector("#sessionDetailTable tbody");
+        tbody.innerHTML = "";
+        responses.forEach((resp, index) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${practiceSessionWords[index] ? practiceSessionWords[index].caracter : "-"}</td>
+            <td>${resp}</td>`;
+          tbody.appendChild(row);
+        });
+      }
+      document.getElementById("tabGlobal").addEventListener("click", () => {
+        document.getElementById("globalStatsContainer").classList.add("active");
+        document.getElementById("sessionStatsContainer").classList.remove("active");
+        document.getElementById("historyContainer").classList.remove("active");
+      });
+      document.getElementById("tabSession").addEventListener("click", () => {
+        document.getElementById("sessionStatsContainer").classList.add("active");
+        document.getElementById("globalStatsContainer").classList.remove("active");
+        document.getElementById("historyContainer").classList.remove("active");
+        renderSessionStats();
+      });
+      document.getElementById("tabHistory").addEventListener("click", () => {
+        document.getElementById("historyContainer").classList.add("active");
+        document.getElementById("globalStatsContainer").classList.remove("active");
+        document.getElementById("sessionStatsContainer").classList.remove("active");
+        renderSessionHistory();
+      });
+
+      /* ==================== AJUSTES ==================== */
+      const settingsForm = document.getElementById("settingsForm");
+      settingsForm.addEventListener("submit", function(event) {
+        event.preventDefault();
+        settings.keyMostrar = document.getElementById("keyMostrar").value;
+        settings.keyCorrect = document.getElementById("keyCorrect").value;
+        settings.keyIncorrect = document.getElementById("keyIncorrect").value;
+        settings.problemThreshold = parseInt(document.getElementById("problemThreshold").value);
+        settings.feedbackDelay = parseInt(document.getElementById("feedbackDelay").value);
+        settings.audioEnabled = document.getElementById("audioEnabled").value === "true";
+        settings.darkTheme = document.getElementById("darkTheme").checked;
+        settings.notificationsEnabled = document.getElementById("notificationsEnabled").checked;
+        settings.newWordsCount = parseInt(document.getElementById("newWordsCount").value);
+        document.getElementById("newWordsCountDisplay").textContent = settings.newWordsCount;
+        saveSettings();
+        applyTheme();
+        alert("Ajustes guardados.");
+      });
+      document.getElementById("resetAll").addEventListener("click", function() {
+        if(confirm("Esto borrará todos tus datos y ajustes. ¿Estás seguro?")) {
+          localStorage.clear();
+          location.reload();
+        }
+      });
+      document.getElementById("resetStats").addEventListener("click", function() {
+        if(confirm("¿Seguro que deseas resetear las estadísticas? Esto borrará el historial de sesiones y las palabras falladas.")) {
+          localStorage.removeItem("sessionHistory");
+          words.forEach(word => {
+            word.failCount = 0;
+          });
+          saveWords();
+          alert("Estadísticas reiniciadas.");
+        }
+      });
+
+      /* ==================== RENDER INICIAL ==================== */
+      // Si deseas que inicie en otra sección, cámbialo aquí.
+      showSection("practicar");
+    });
+  </script>
+</body>
+</html>
